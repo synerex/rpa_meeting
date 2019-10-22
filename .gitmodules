@@ -1,0 +1,3 @@
+[submodule "cybozu"]
+	path = cybozu
+	url = https://github.com/synerex/meeting_cybozu.git
