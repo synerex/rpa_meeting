@@ -10,23 +10,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/synerex/synerex_alpha/api/rpa"
+	rpa "github.com/synerex/proto_rpa"
+	api "github.com/synerex/synerex_api"
+	proto "github.com/synerex/synerex_proto"
 	"github.com/tidwall/gjson"
 
-	"github.com/synerex/synerex_alpha/provider/rpa/selenium"
+	selenium "github.com/synerex/rpa_selenium"
 
-	"github.com/synerex/synerex_alpha/api"
-	"github.com/synerex/synerex_alpha/sxutil"
-	"google.golang.org/grpc"
+	sxutil "github.com/synerex/synerex_sxutil"
 )
 
 var (
-	serverAddr = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv    = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
-	idList     []uint64
-	spMap      map[uint64]*sxutil.SupplyOpts
-	mu         sync.RWMutex
-	rm         *rpa.MeetingService
+	nodesrv         = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
+	idList          []uint64
+	spMap           map[uint64]*sxutil.SupplyOpts
+	mu              sync.RWMutex
+	sxServerAddress string
+	rm              *rpa.MeetingService
 )
 
 func init() {
@@ -119,7 +119,7 @@ func setMeetingService(json string) {
 	}
 }
 
-func demandCallback(clt *sxutil.SMServiceClient, dm *api.Demand) {
+func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 	log.Println("Got Meeting demand callback")
 
 	if dm.TargetId != 0 { // selected
@@ -181,7 +181,7 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *api.Demand) {
 	}
 }
 
-func subscribeDemand(client *sxutil.SMServiceClient) {
+func subscribeDemand(client *sxutil.SXServiceClient) {
 	// goroutine!
 	ctx := context.Background() //
 	client.SubscribeDemand(ctx, demandCallback)
@@ -191,23 +191,22 @@ func subscribeDemand(client *sxutil.SMServiceClient) {
 
 func main() {
 	flag.Parse()
-	sxutil.RegisterNodeName(*nodesrv, "RPAMeetingProvider", false)
-
 	go sxutil.HandleSigInt()
 	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
 
-	var opts []grpc.DialOption
-	wg := sync.WaitGroup{} // for syncing other goroutines
-
-	opts = append(opts, grpc.WithInsecure())
-	conn, err := grpc.Dial(*serverAddr, opts...)
+	channelTypes := []uint32{proto.MEETING_SERVICE}
+	// obtain synerex server address from nodeserv
+	srv, err := sxutil.RegisterNode(*nodesrv, "RPAMeetingProvider", channelTypes, nil)
 	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
+		log.Fatal("Can't register node...")
 	}
+	log.Printf("Connecting Server [%s]\n", srv)
 
-	client := api.NewSynerexClient(conn)
-	argJson := fmt.Sprintf("{Client: Meeting}")
-	sclient := sxutil.NewSMServiceClient(client, api.ChannelType_MEETING_SERVICE, argJson)
+	wg := sync.WaitGroup{} // for syncing other goroutines
+	sxServerAddress = srv
+	client := sxutil.GrpcConnectServer(srv)
+	argJson := fmt.Sprintf("{Client:RPAMeeting}")
+	sclient := sxutil.NewSXServiceClient(client, proto.MEETING_SERVICE, argJson)
 
 	wg.Add(1)
 	go subscribeDemand(sclient)
