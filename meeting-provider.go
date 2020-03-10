@@ -15,7 +15,7 @@ import (
 	proto "github.com/synerex/synerex_proto"
 	"github.com/tidwall/gjson"
 
-	selenium "github.com/synerex/rpa_selenium"
+	selenium "github.com/synerex/meeting_cybozu"
 
 	sxutil "github.com/synerex/synerex_sxutil"
 )
