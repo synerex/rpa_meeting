@@ -1,3 +1,6 @@
 [submodule "cybozu"]
 	path = cybozu
 	url = https://github.com/synerex/meeting_cybozu.git
+[submodule "desknets"]
+	path = desknets
+	url = https://github.com/synerex/meeting_desknets.git
