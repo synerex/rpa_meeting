@@ -15,7 +15,7 @@ import (
 	proto "github.com/synerex/synerex_proto"
 	"github.com/tidwall/gjson"
 
-	selenium "github.com/synerex/meeting_cybozu"
+	cybozu "github.com/synerex/meeting_cybozu"
 
 	sxutil "github.com/synerex/synerex_sxutil"
 )
@@ -124,8 +124,8 @@ func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 
 	if dm.TargetId != 0 { // selected
 
-		if err := selenium.Execute(rm.Year, rm.Month, rm.Day, rm.Week, rm.Start, rm.End, rm.People, rm.Title, rm.Room); err != nil {
-			log.Println("Failed to execute selenium:", err)
+		if err := cybozu.Execute(rm.Year, rm.Month, rm.Day, rm.Week, rm.Start, rm.End, rm.People, rm.Title, rm.Room); err != nil {
+			log.Println("Failed to execute cybozu:", err)
 		} else {
 			log.Println("Select the room!")
 			clt.Confirm(sxutil.IDType(dm.Id))
@@ -137,7 +137,7 @@ func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 
 		switch rm.Status {
 		case "checking":
-			room, err := selenium.Schedules(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.People)
+			room, err := cybozu.Schedules(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.People)
 			if err != nil {
 				rm.Status = "NG"
 				b, err := json.Marshal(rm)
