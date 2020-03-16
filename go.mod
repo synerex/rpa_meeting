@@ -1,4 +1,4 @@
-module meeting-provider
+module github.com/synerex/rpa_meeting
 
 go 1.12
 
@@ -10,7 +10,6 @@ require (
 	github.com/synerex/meeting_cybozu v0.0.0-20200310030608-5c6a6ebf25e1
 	github.com/synerex/meeting_desknets v0.0.0-20200313120859-8db382fee516
 	github.com/synerex/proto_rpa v0.0.1
-	github.com/synerex/rpa_selenium v0.0.1
 	github.com/synerex/synerex_api v0.1.1
 	github.com/synerex/synerex_proto v0.1.3
 	github.com/synerex/synerex_sxutil v0.3.10
