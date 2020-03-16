@@ -16,7 +16,6 @@ import (
 	"github.com/tidwall/gjson"
 
 	cybozu "github.com/synerex/meeting_cybozu"
-	desknets "github.com/synerex/meeting_desknets"
 
 	sxutil "github.com/synerex/synerex_sxutil"
 )
@@ -123,11 +122,11 @@ func setMeetingService(json string) {
 func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 	log.Println("Got Meeting demand callback")
 
-	facilities, err := desknets.Schedule(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	log.Println(facilities)
+	//	facilities, err := desknets.Schedule(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room)
+	//	if err != nil {
+	//		log.Fatalln(err)
+	//	}
+	//	log.Println(facilities)
 
 	if dm.TargetId != 0 { // selected
 
