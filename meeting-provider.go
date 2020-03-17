@@ -16,6 +16,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	cybozu "github.com/synerex/meeting_cybozu"
+	desknets "github.com/synerex/meeting_desknets"
 
 	sxutil "github.com/synerex/synerex_sxutil"
 )
@@ -122,12 +123,6 @@ func setMeetingService(json string) {
 func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 	log.Println("Got Meeting demand callback")
 
-	//	facilities, err := desknets.Schedule(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room)
-	//	if err != nil {
-	//		log.Fatalln(err)
-	//	}
-	//	log.Println(facilities)
-
 	if dm.TargetId != 0 { // selected
 
 		if err := cybozu.Execute(rm.Year, rm.Month, rm.Day, rm.Week, rm.Start, rm.End, rm.People, rm.Title, rm.Room); err != nil {
@@ -143,6 +138,13 @@ func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 
 		switch rm.Status {
 		case "checking":
+
+			facilities, err := desknets.Schedule(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			log.Println(facilities)
+
 			room, err := cybozu.Schedules(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.People)
 			if err != nil {
 				rm.Status = "NG"
