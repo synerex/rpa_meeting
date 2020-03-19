@@ -4,3 +4,6 @@
 [submodule "desknets"]
 	path = desknets
 	url = https://github.com/synerex/meeting_desknets.git
+[submodule "selenium"]
+	path = selenium
+	url = https://github.com/synerex/meeting_selenium.git
