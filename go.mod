@@ -7,8 +7,8 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/sclevine/agouti v3.0.0+incompatible
-	github.com/synerex/meeting_cybozu v0.0.0-20200316082401-ff9fc68105c0
-	github.com/synerex/meeting_desknets v0.0.0-20200316060550-b62b5ce86fb9
+	github.com/synerex/meeting_cybozu v0.0.4
+	github.com/synerex/meeting_desknets v0.0.4
 	github.com/synerex/proto_rpa v0.0.1
 	github.com/synerex/synerex_api v0.1.1
 	github.com/synerex/synerex_proto v0.1.3
