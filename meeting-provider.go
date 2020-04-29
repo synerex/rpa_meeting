@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -104,6 +105,7 @@ func setMeetingService(json string) {
 	people := gjson.Get(json, "people").String()
 	title := gjson.Get(json, "title").String()
 	room := gjson.Get(json, "room").String()
+	rid := gjson.Get(json, "rid").String()
 
 	rm = &rpa.MeetingService{
 		Cid:    cid,
@@ -117,6 +119,7 @@ func setMeetingService(json string) {
 		People: people,
 		Title:  title,
 		Room:   room,
+		Rid:    rid,
 	}
 }
 
@@ -145,7 +148,34 @@ func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 			}
 			log.Println(facilities)
 
-			room, err := cybozu.Schedules(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.People)
+			var facilityName []string
+			for k := range facilities {
+				facilityName = append(facilityName, k)
+			}
+			fb, err := json.Marshal(facilityName)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			rooms, err := cybozu.Schedules(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.People)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			log.Println(rooms)
+
+			var roomName []string
+			for k := range rooms {
+				roomName = append(roomName, k)
+			}
+			rb, err := json.Marshal(roomName)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			desknetsReplaced := strings.Replace(string(fb), "\"", "'", -1)
+			cybozuReplaced := strings.Replace(string(rb), "\"", "'", -1)
+			roomsJSON := `{\"cybozu\":\"` + cybozuReplaced + `\",\"desknets\":\"` + desknetsReplaced + `\"}`
+
 			if err != nil {
 				rm.Status = "NG"
 				b, err := json.Marshal(rm)
@@ -165,7 +195,7 @@ func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 				mu.Unlock()
 			} else {
 				rm.Status = "OK"
-				rm.Room = room
+				rm.Room = roomsJSON
 				b, err := json.Marshal(rm)
 				if err != nil {
 					fmt.Println("Failed to json marshal:", err)
