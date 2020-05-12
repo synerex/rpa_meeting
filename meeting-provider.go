@@ -24,6 +24,7 @@ import (
 
 var (
 	nodesrv         = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
+	meetType        = flag.String("type", "cybozu", "Meeting Server Type [cybozu|desknets]")
 	idList          []uint64
 	spMap           map[uint64]*sxutil.SupplyOpts
 	mu              sync.RWMutex
@@ -123,16 +124,36 @@ func setMeetingService(json string) {
 	}
 }
 
+func idIndex(idl []uint64, id uint64) int {
+	for i, x := range idl {
+		if x == id {
+			return i
+		}
+	}
+	return -1
+}
+
 func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 	log.Println("Got Meeting demand callback")
 
-	if dm.TargetId != 0 { // selected
+	if dm.TargetId != 0 && idIndex(idList, dm.TargetId) != -1 { // I'm selected!
+		log.Printf("Selected! " + *meetType)
+		// may remove targetId from idList!?
 
-		if err := cybozu.Execute(rm.Year, rm.Month, rm.Day, rm.Week, rm.Start, rm.End, rm.People, rm.Title, rm.Room); err != nil {
-			log.Println("Failed to execute cybozu:", err)
-		} else {
-			log.Println("Select the room!")
-			clt.Confirm(sxutil.IDType(dm.Id))
+		if *meetType == "cybozu" {
+			if err := cybozu.Execute(rm.Year, rm.Month, rm.Day, rm.Week, rm.Start, rm.End, rm.People, rm.Title, rm.Room); err != nil {
+				log.Println("Failed to execute cybozu:", err)
+			} else {
+				log.Println("Select the room!")
+				clt.Confirm(sxutil.IDType(dm.Id))
+			}
+		} else if *meetType == "desknets" {
+			if err := desknets.Execute(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room); err != nil {
+				log.Println("Failed to execute desknets:", err)
+			} else {
+				log.Println("Select the room!")
+				clt.Confirm(sxutil.IDType(dm.Id))
+			}
 		}
 
 	} else { // not selected
@@ -141,77 +162,86 @@ func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 
 		switch rm.Status {
 		case "checking":
-
-			facilities, err := desknets.Schedule(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			log.Println(facilities)
-
-			var facilityName []string
-			for k := range facilities {
-				facilityName = append(facilityName, k)
-			}
-			fb, err := json.Marshal(facilityName)
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-			rooms, err := cybozu.Schedules(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.People)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			log.Println(rooms)
-
-			var roomName []string
-			for k := range rooms {
-				roomName = append(roomName, k)
-			}
-			rb, err := json.Marshal(roomName)
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-			desknetsReplaced := strings.Replace(string(fb), "\"", "'", -1)
-			cybozuReplaced := strings.Replace(string(rb), "\"", "'", -1)
-			roomsJSON := `{\"cybozu\":\"` + cybozuReplaced + `\",\"desknets\":\"` + desknetsReplaced + `\"}`
-
-			if err != nil {
-				rm.Status = "NG"
-				b, err := json.Marshal(rm)
+			roomsJSON := ""
+			if *meetType == "desknets" {
+				// desknets
+				facilities, err := desknets.Schedule(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room)
 				if err != nil {
-					fmt.Println("Failed to json marshal:", err)
+					log.Fatalln(err)
 				}
-				sp := &sxutil.SupplyOpts{
-					Target: dm.Id,
-					Name:   "Invalid schedules",
-					JSON:   string(b),
-				}
+				log.Println(facilities)
 
-				mu.Lock()
-				pid := clt.ProposeSupply(sp)
-				idList = append(idList, pid)
-				spMap[pid] = sp
-				mu.Unlock()
+				var facilityName []string
+				for k := range facilities {
+					facilityName = append(facilityName, k)
+				}
+				fb, err := json.Marshal(facilityName)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				desknetsReplaced := strings.Replace(string(fb), "\"", "'", -1)
+				roomsJSON = `{\"desknets\":\"` + desknetsReplaced + `\"}`
+
+			} else if *meetType == "cybozu" {
+				rooms, err := cybozu.Schedules(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.People)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				log.Println(rooms)
+				var roomName []string
+				for k := range rooms {
+					roomName = append(roomName, k)
+				}
+				rb, err := json.Marshal(roomName)
+				if err != nil {
+					log.Fatalln(err)
+
+				}
+				cybozuReplaced := strings.Replace(string(rb), "\"", "'", -1)
+				roomsJSON = `{\"cybozu\":\"` + cybozuReplaced + `\"}`
 			} else {
-				rm.Status = "OK"
-				rm.Room = roomsJSON
-				b, err := json.Marshal(rm)
-				if err != nil {
-					fmt.Println("Failed to json marshal:", err)
-				}
-				sp := &sxutil.SupplyOpts{
-					Target: dm.Id,
-					Name:   "Valid schedules",
-					JSON:   string(b),
-				}
-
-				mu.Lock()
-				pid := clt.ProposeSupply(sp)
-				idList = append(idList, pid)
-				spMap[pid] = sp
-				mu.Unlock()
+				// just ignore unknown room type
+				log.Println("Unknown meeting type " + *meetType)
+				return
 			}
+
+			/*			if err != nil {
+							rm.Status = "NG"
+							b, err := json.Marshal(rm)
+							if err != nil {
+								fmt.Println("Failed to json marshal:", err)
+							}
+							sp := &sxutil.SupplyOpts{
+								Target: dm.Id,
+								Name:   "Invalid schedules",
+								JSON:   string(b),
+							}
+
+							mu.Lock()
+							pid := clt.ProposeSupply(sp)
+							idList = append(idList, pid)
+							spMap[pid] = sp
+							mu.Unlock()
+						} else {
+			*/
+			rm.Status = "OK"
+			rm.Room = roomsJSON
+			b, err := json.Marshal(rm)
+			if err != nil {
+				fmt.Println("Failed to json marshal:", err)
+			}
+			sp := &sxutil.SupplyOpts{
+				Target: dm.Id,
+				Name:   "Valid schedules",
+				JSON:   string(b),
+			}
+
+			mu.Lock()
+			pid := clt.ProposeSupply(sp)
+			idList = append(idList, pid)
+			spMap[pid] = sp
+			mu.Unlock()
+			//			}
 		default:
 			fmt.Printf("Switch case of default(%s) is called\n", rm.Status)
 		}
