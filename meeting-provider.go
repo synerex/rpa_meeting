@@ -258,6 +258,7 @@ func subscribeDemand(client *sxutil.SXServiceClient) {
 }
 
 func main() {
+	log.Printf("RPA_Meeting(%s) built %s sha1 %s", sxutil.GitVer, sxutil.BuildTime, sxutil.Sha1Ver)
 	flag.Parse()
 	go sxutil.HandleSigInt()
 	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
