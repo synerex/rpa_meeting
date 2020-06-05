@@ -10,7 +10,7 @@ require (
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/sclevine/agouti v3.0.0+incompatible
 	github.com/shirou/gopsutil v2.20.4+incompatible // indirect
-	github.com/synerex/meeting_cybozu v0.0.6
+	github.com/synerex/meeting_cybozu v0.0.7
 	github.com/synerex/meeting_desknets v0.0.4
 	github.com/synerex/proto_rpa v0.0.3
 	github.com/synerex/synerex_api v0.3.1
