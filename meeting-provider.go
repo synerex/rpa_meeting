@@ -145,15 +145,15 @@ func demandCallback(clt *sxutil.SXServiceClient, dm *api.Demand) {
 				log.Println("Failed to execute cybozu:", err)
 			} else {
 				log.Println("Select the room!")
-				clt.Confirm(sxutil.IDType(dm.Id))
+				clt.Confirm(sxutil.IDType(dm.Id), sxutil.IDType(dm.TargetId))
 			}
 		} else if *meetType == "desknets" {
 			if err := desknets.Execute(rm.Year, rm.Month, rm.Day, rm.Start, rm.End, rm.Title, rm.Room); err != nil {
 				log.Println("Failed to execute desknets:", err)
 			} else {
 				log.Println("Select the room!")
-				clt.Confirm(sxutil.IDType(dm.Id))
-			}
+				clt.Confirm(sxutil.IDType(dm.Id), sxutil.IDType(dm.TargetId))
+	}
 		}
 
 	} else { // not selected

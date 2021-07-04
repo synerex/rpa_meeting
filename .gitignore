@@ -9,10 +9,8 @@
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
-*.out
 
 # Binaries for server, providers, cli tool
 rpa_meeting
 
 # Go module file
-go.sum
